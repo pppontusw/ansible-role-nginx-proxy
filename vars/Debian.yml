@@ -1,0 +1,6 @@
+# we use the defaults in defaults/main
+#nginx_path: /etc/nginx
+#nginx_process_name: nginx
+#nginx_pkg_name: nginx
+nginx_user: www-data
+nginx_group: www-data

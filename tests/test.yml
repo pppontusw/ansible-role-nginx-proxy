@@ -1,0 +1,108 @@
+- name: setup
+  hosts: all
+  vars:
+    - dhparams_size: 1024
+    - ssl_cert_wc_universumglobal_com: "{{vault_ssl_cert_wc_universumglobal_com}}"
+    - ssl_key_wc_universumglobal_com: "{{vault_ssl_key_wc_universumglobal_com}}"
+    - nginx_redirect_virtual_sites: 
+      - site_id: redirect
+        http_port: 80
+        server_names: test-redirect.universumglobal.com
+        http_redirect: http://example.com
+    - nginx_proxy_virtual_sites: 
+      - site_id: proxy
+        http_port: 80
+        server_names: test-proxy.universumglobal.com
+        upstream_server: status.aws.amazon.com:80
+        proxy_pass: http://proxy
+    - nginx_proxy_ssl_virtual_sites: 
+      - site_id: proxy_ssl
+        http_port: 80
+        https_port: 443
+        server_names: test-proxy-ssl.universumglobal.com
+        upstream_server: status.aws.amazon.com:80
+        upstream_extras:
+          - keepalive 20
+        proxy_pass: http://proxy_ssl
+        ssl_cert: "{{ssl_cert_wc_universumglobal_com}}"
+        ssl_key: "{{ssl_key_wc_universumglobal_com}}"
+        ssl_protocols: TLSv1 TLSv1.1 TLSv1.2
+    - nginx_redirect_ssl_virtual_sites:
+      - site_id: redirect_ssl
+        http_port: 80
+        https_port: 443
+        http_redirect: http://example.com
+        https_redirect: http://example.com
+        server_names: test-redirect-ssl.universumglobal.com
+        ssl_cert: "{{ssl_cert_wc_universumglobal_com}}"
+        ssl_key: "{{ssl_key_wc_universumglobal_com}}"
+        ssl_protocols: TLSv1 TLSv1.1 TLSv1.2
+  roles: 
+    - nginx-proxy
+  tags: setup
+
+- name: test
+  hosts: all
+  serial: 1
+  vars:
+    - ssl_cert_wc_universumglobal_com: "{{vault_ssl_cert_wc_universumglobal_com}}"
+    - ssl_key_wc_universumglobal_com: "{{vault_ssl_key_wc_universumglobal_com}}"
+    - nginx_redirect_virtual_sites: 
+      - site_id: redirect
+        http_port: 80
+        server_names: test-redirect.universumglobal.com
+        http_redirect: http://example.com
+    - nginx_proxy_virtual_sites: 
+      - site_id: proxy
+        http_port: 80
+        server_names: test-proxy.universumglobal.com
+        upstream_server: status.aws.amazon.com:80
+        proxy_pass: http://proxy
+    - nginx_proxy_ssl_virtual_sites: 
+      - site_id: proxy_ssl
+        http_port: 80
+        https_port: 443
+        server_names: test-proxy-ssl.universumglobal.com
+        upstream_server: status.aws.amazon.com:80
+        upstream_extras:
+          - keepalive 20
+        proxy_pass: http://proxy_ssl
+        ssl_cert: "{{ssl_cert_wc_universumglobal_com}}"
+        ssl_key: "{{ssl_key_wc_universumglobal_com}}"
+        ssl_protocols: TLSv1 TLSv1.1 TLSv1.2
+    - nginx_redirect_ssl_virtual_sites:
+      - site_id: redirect_ssl
+        http_port: 80
+        https_port: 443
+        http_redirect: http://example.com
+        https_redirect: http://example.com
+        server_names: test-redirect-ssl.universumglobal.com
+        ssl_cert: "{{ssl_cert_wc_universumglobal_com}}"
+        ssl_key: "{{ssl_key_wc_universumglobal_com}}"
+        ssl_protocols: TLSv1 TLSv1.1 TLSv1.2
+  tasks:
+    - lineinfile:
+        dest: /etc/hosts
+        line: "{{ansible_default_ipv4.address}} {{item.server_names}}"
+        state: present
+      with_items: "{{nginx_redirect_virtual_sites + nginx_proxy_virtual_sites + nginx_proxy_ssl_virtual_sites + nginx_redirect_ssl_virtual_sites}}"
+      delegate_to: localhost
+      become: yes
+    - get_url:
+        url: "http://{{item.server_names}}"
+        dest: /tmp
+      with_items: "{{nginx_redirect_virtual_sites + nginx_proxy_virtual_sites}}"
+      delegate_to: localhost
+    - get_url:
+        url: "https://{{item.server_names}}"
+        dest: /tmp
+      with_items: "{{nginx_proxy_ssl_virtual_sites + nginx_redirect_ssl_virtual_sites}}"
+      delegate_to: localhost
+    - lineinfile:
+        dest: /etc/hosts
+        line: "{{ansible_default_ipv4.address}} {{item.server_names}}"
+        state: absent
+      with_items: "{{nginx_redirect_virtual_sites + nginx_proxy_virtual_sites + nginx_proxy_ssl_virtual_sites + nginx_redirect_ssl_virtual_sites}}"
+      delegate_to: localhost
+      become: yes
+  tags: test

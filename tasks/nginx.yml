@@ -1,0 +1,119 @@
+- name: copy nginx.conf
+  template:
+    src: "../templates/{{ item }}.j2"
+    dest: "{{nginx_path}}/{{ item }}"
+    owner: "{{nginx_user}}"
+    group: "{{nginx_group}}"
+    mode: 0644
+  with_items:
+    - nginx.conf
+  notify:
+    - restart nginx
+
+- name: create ssl folder
+  file: 
+    path: "{{nginx_path}}/sites-enabled" 
+    state: directory
+    owner: "{{nginx_user}}"
+    group: "{{nginx_group}}"
+    mode: 0644
+
+- name: create ssl folder
+  file: 
+    path: "{{nginx_path}}/sites-available"
+    state: directory
+    owner: "{{nginx_user}}"
+    group: "{{nginx_group}}"
+    mode: 0644
+
+- name: copy ssl virtual sites
+  template:
+    src: "../templates/virtualsite-ssl.j2"
+    dest: "{{nginx_path}}/sites-available/{{ item.site_id }}"
+    owner: "{{nginx_user}}"
+    group: "{{nginx_group}}"
+    mode: 0644
+  with_items: "{{nginx_proxy_ssl_virtual_sites|default([])}}"
+  notify:
+    - restart nginx
+
+- name: create ssl symlinks
+  file: 
+    src: "{{nginx_path}}/sites-available/{{ item.site_id }}" 
+    dest: "{{nginx_path}}/sites-enabled/{{ item.site_id }}" 
+    state: link
+    owner: "{{nginx_user}}"
+    group: "{{nginx_group}}"
+    mode: 0644
+  with_items: "{{nginx_proxy_ssl_virtual_sites|default([])}}"
+  notify:
+    - restart nginx
+
+- name: copy non-ssl virtual sites
+  template:
+    src: "../templates/virtualsite.j2"
+    dest: "{{nginx_path}}/sites-available/{{ item.site_id }}"
+    owner: "{{nginx_user}}"
+    group: "{{nginx_group}}"
+    mode: 0644
+  with_items: "{{nginx_proxy_virtual_sites|default([])}}"
+  notify:
+    - restart nginx
+
+- name: create non-ssl symlinks
+  file: 
+    src: "{{nginx_path}}/sites-available/{{ item.site_id }}" 
+    dest: "{{nginx_path}}/sites-enabled/{{ item.site_id }}" 
+    state: link
+    owner: "{{nginx_user}}"
+    group: "{{nginx_group}}"
+    mode: 0644
+  with_items: "{{nginx_proxy_virtual_sites|default([])}}"
+  notify:
+    - restart nginx
+
+- name: copy ssl redirect virtual sites
+  template:
+    src: "../templates/virtualsite-redirect.j2"
+    dest: "{{nginx_path}}/sites-available/{{ item.site_id }}"
+    owner: "{{nginx_user}}"
+    group: "{{nginx_group}}"
+    mode: 0644
+  with_items: "{{nginx_redirect_ssl_virtual_sites|default([])}}"
+  notify:
+    - restart nginx
+
+- name: create ssl redirect symlinks
+  file: 
+    src: "{{nginx_path}}/sites-available/{{ item.site_id }}" 
+    dest: "{{nginx_path}}/sites-enabled/{{ item.site_id }}" 
+    state: link
+    owner: "{{nginx_user}}"
+    group: "{{nginx_group}}"
+    mode: 0644
+  with_items: "{{nginx_redirect_ssl_virtual_sites|default([])}}"
+  notify:
+    - restart nginx
+
+- name: copy redirect virtual sites
+  template:
+    src: "../templates/virtualsite-redirect.j2"
+    dest: "{{nginx_path}}/sites-available/{{ item.site_id }}"
+    owner: "{{nginx_user}}"
+    group: "{{nginx_group}}"
+    mode: 0644
+  with_items: "{{nginx_redirect_virtual_sites|default([])}}"
+  notify:
+    - restart nginx
+
+- name: create redirect symlinks
+  file: 
+    src: "{{nginx_path}}/sites-available/{{ item.site_id }}" 
+    dest: "{{nginx_path}}/sites-enabled/{{ item.site_id }}" 
+    state: link
+    owner: "{{nginx_user}}"
+    group: "{{nginx_group}}"
+    mode: 0644
+  with_items: "{{nginx_redirect_virtual_sites|default([])}}"
+  notify:
+    - restart nginx

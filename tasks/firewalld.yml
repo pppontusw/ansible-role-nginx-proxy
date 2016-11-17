@@ -1,0 +1,42 @@
+- name: enable firewalld service
+  service:
+    name: firewalld
+    state: started
+    enabled: yes
+  tags: firewalld
+
+- name: configure firewalld
+  firewalld: "port={{item.http_port}}/tcp permanent=true state=enabled"
+  notify: restart firewalld
+  with_items: "{{nginx_proxy_ssl_virtual_sites|default([])}}"
+  tags: firewalld
+
+- name: configure firewalld
+  firewalld: "port={{item.https_port}}/tcp permanent=true state=enabled"
+  notify: restart firewalld
+  with_items: "{{nginx_proxy_ssl_virtual_sites|default([])}}"
+  tags: firewalld
+
+- name: configure firewalld
+  firewalld: "port={{item.http_port}}/tcp permanent=true state=enabled"
+  notify: restart firewalld
+  with_items: "{{nginx_redirect_ssl_virtual_sites|default([])}}"
+  tags: firewalld
+
+- name: configure firewalld
+  firewalld: "port={{item.https_port}}/tcp permanent=true state=enabled"
+  notify: restart firewalld
+  with_items: "{{nginx_redirect_ssl_virtual_sites|default([])}}"
+  tags: firewalld
+
+- name: configure firewalld
+  firewalld: "port={{item.http_port}}/tcp permanent=true state=enabled"
+  notify: restart firewalld
+  with_items: "{{nginx_proxy_virtual_sites|default([])}}"
+  tags: firewalld
+
+- name: configure firewalld
+  firewalld: "port={{item.http_port}}/tcp permanent=true state=enabled"
+  notify: restart firewalld
+  with_items: "{{nginx_redirect_virtual_sites|default([])}}"
+  tags: firewalld 

@@ -1,0 +1,6 @@
+#example-playbook.yml
+# sets up basic account and security configuration
+- name: reverse proxy
+  hosts: reverse-proxies 
+  roles: 
+    - nginx-proxy

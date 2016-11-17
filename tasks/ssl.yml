@@ -1,0 +1,145 @@
+- name: create ssl base folder
+  file: 
+    path: "{{nginx_proxy_ssl_store_path}}" 
+    state: directory
+    owner: "{{nginx_user}}"
+    group: "{{nginx_group}}"
+    mode: 0600
+    setype: httpd_config_t
+
+- name: check if dhparams are generated
+  stat: 
+    path: "{{nginx_proxy_ssl_store_path}}/dhparams.pem"
+  register: st
+
+- name: generate dhparams
+  shell: 'openssl dhparam -out {{nginx_proxy_ssl_store_path}}/dhparams.pem {{dh_size}}'
+  when: st.stat.exists == False
+  notify:
+  - restart nginx
+
+- name: chown dhparams
+  file: 
+    path: "{{nginx_proxy_ssl_store_path}}/dhparams.pem" 
+    state: file
+    owner: "{{nginx_user}}"
+    group: "{{nginx_group}}"
+    mode: 0600
+    setype: httpd_config_t
+  notify:
+  - restart nginx
+
+- name: create ssl folders
+  file: 
+    path: "{{nginx_proxy_ssl_store_path}}/{{ item.site_id }}" 
+    state: directory
+    owner: "{{nginx_user}}"
+    group: "{{nginx_group}}"
+    mode: 0600
+    setype: httpd_config_t
+  with_items: "{{nginx_proxy_ssl_virtual_sites|default([])}}" 
+  when: item.letsencrypt is not defined
+
+- name: copy ssl-certificates
+  copy:
+    content: "{{ item.ssl_cert }}"
+    dest: "{{nginx_proxy_ssl_store_path}}/{{ item.site_id }}/cert.pem"
+    owner: "{{nginx_user}}"
+    group: "{{nginx_group}}"
+    mode: 0600
+    setype: httpd_config_t
+  with_items: "{{nginx_proxy_ssl_virtual_sites|default([])}}"
+  when: item.letsencrypt is not defined
+  notify:
+    - restart nginx
+
+- name: copy ssl-keys
+  copy:
+    content: "{{ item.ssl_key }}"
+    dest: "{{nginx_proxy_ssl_store_path}}/{{ item.site_id }}/key.pem"
+    owner: "{{nginx_user}}"
+    group: "{{nginx_group}}"
+    mode: 0600
+    setype: httpd_config_t
+  with_items: "{{nginx_proxy_ssl_virtual_sites|default([])}}"
+  when: item.letsencrypt is not defined
+  notify:
+    - restart nginx
+
+- name: create ssl folders
+  file: 
+    path: "{{nginx_proxy_ssl_store_path}}/{{ item.site_id }}" 
+    state: directory
+    owner: "{{nginx_user}}"
+    group: "{{nginx_group}}"
+    mode: 0600
+    setype: httpd_config_t
+  with_items: "{{nginx_redirect_ssl_virtual_sites|default([])}}" 
+  when: item.letsencrypt is not defined
+
+- name: copy ssl-certificates
+  copy:
+    content: "{{ item.ssl_cert }}"
+    dest: "{{nginx_proxy_ssl_store_path}}/{{ item.site_id }}/cert.pem"
+    owner: "{{nginx_user}}"
+    group: "{{nginx_group}}"
+    mode: 0600
+    setype: httpd_config_t
+  with_items: "{{nginx_redirect_ssl_virtual_sites|default([])}}"
+  when: item.letsencrypt is not defined
+  notify:
+    - restart nginx
+
+- name: copy ssl-keys
+  copy:
+    content: "{{ item.ssl_key }}"
+    dest: "{{nginx_proxy_ssl_store_path}}/{{ item.site_id }}/key.pem"
+    owner: "{{nginx_user}}"
+    group: "{{nginx_group}}"
+    mode: 0600
+    setype: httpd_config_t
+  with_items: "{{nginx_redirect_ssl_virtual_sites|default([])}}"
+  when: item.letsencrypt is not defined
+  notify:
+    - restart nginx
+
+- name: check if folder exists 
+  stat:
+    path: "/etc/letsencrypt/live/{{item.site_id}}"
+  register: p
+  with_items: "{{nginx_redirect_ssl_virtual_sites|default([]) + nginx_proxy_ssl_virtual_sites|default([])}}"
+  when: item.letsencrypt is defined and item.letsencrypt == True
+
+- name: make directory for fallback directory
+  file:
+    path: "{{nginx_proxy_ssl_store_path}}/{{item.item.site_id}}"
+    state: directory
+  become: yes
+  when: (item.item.letsencrypt is defined and item.item.letsencrypt == True) and (item.stat.exists == false)
+  with_items: "{{p.results}}"
+
+- name: generate a self signed fallback certificate so that nginx doesn't hang on startup
+  shell: cd {{nginx_proxy_ssl_store_path}}/{{item.item.site_id}} && openssl req -x509 -newkey rsa:1024 -keyout privkey.pem -out fullchain.pem -days 365 -subj "/C=SE/ST=Stockholm/L=Stockholm/O=TestCompany/OU=TestOrg/CN=localhost" -nodes
+  become: yes
+  when: (item.item.letsencrypt is defined and item.item.letsencrypt == True) and (item.stat.exists == false)
+  with_items: "{{p.results}}"
+
+- name: use the fallback certificate if necessary 
+  lineinfile:
+    dest: "{{nginx_path}}/sites-enabled/{{ item.item.site_id }}"
+    line: "ssl_certificate {{nginx_proxy_ssl_store_path}}/{{item.item.site_id}}/fullchain.pem;"
+    regexp: "ssl_certificate /etc/letsencrypt/live/{{ item.item.site_id }}/fullchain.pem;"
+  when: (item.item.letsencrypt is defined and item.item.letsencrypt == True) and (item.stat.exists == false)
+  with_items: "{{p.results}}"
+  notify:
+    - restart nginx
+
+- name: use the fallback key if necessary 
+  lineinfile:
+    dest: "{{nginx_path}}/sites-enabled/{{ item.item.site_id }}"
+    line: "ssl_certificate_key {{nginx_proxy_ssl_store_path}}/{{item.item.site_id}}/privkey.pem;"
+    regexp: "ssl_certificate_key /etc/letsencrypt/live/{{ item.item.site_id }}/privkey.pem;"
+  when: (item.item.letsencrypt is defined and item.item.letsencrypt == True) and (item.stat.exists == false)
+  with_items: "{{p.results}}"
+  notify:
+    - restart nginx

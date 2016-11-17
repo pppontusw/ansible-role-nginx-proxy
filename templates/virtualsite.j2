@@ -1,0 +1,34 @@
+# {{ ansible_managed }}
+{% if item.upstream_server is defined %}
+upstream {% if item.upstream_name is defined %} {{item.upstream_name}} {% else %} {{item.site_id}} {% endif %}  {
+        server {{item.upstream_server}};
+        {% if item.upstream_extras is defined %}
+        {% for extra in item.upstream_extras %}
+        {{extra}};
+        {% endfor %}
+        {% endif %}
+}
+{% endif %}
+
+server {
+{% if item.custom_http_block is not defined %}
+        listen {{item.http_port}};
+        server_name {{item.server_names}};
+
+        location / {
+                proxy_pass {{item.proxy_pass}};
+                {% if item.proxy_redirect is defined %}
+proxy_redirect {{item.proxy_redirect}};
+                {% else %}
+proxy_redirect off;
+                {% endif %}
+                proxy_set_header Host $host;
+                proxy_set_header X-Real-IP $remote_addr ;
+                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for ;
+                proxy_set_header X-Forwarded-Proto http;
+        }
+{% endif %}
+{% if item.custom_http_block is defined %}
+        {{ item.custom_http_block }}
+{% endif %}
+}

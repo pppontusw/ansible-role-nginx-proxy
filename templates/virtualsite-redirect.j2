@@ -1,0 +1,50 @@
+# {{ ansible_managed }}
+
+server {
+{% if item.custom_http_block is not defined %}
+        listen {{item.http_port}};
+        server_name {{item.server_names}};
+
+{% if item.letsencrypt is defined and item.letsencrypt %}
+        location '/.well-known/acme-challenge' {
+                default_type "text/plain";
+                root        /tmp/letsencrypt-auto;
+        }
+        location / {
+                rewrite ^ {{item.http_redirect}} permanent;
+        }
+{% else %}
+        rewrite ^ {{item.http_redirect}} permanent;
+{% endif %}
+
+{% endif %}
+
+{% if item.custom_http_block is defined %}
+	{{ item.custom_http_block }}
+{% endif %}
+}
+
+{% if item.https_redirect is defined %}
+server {
+{% if item.custom_https_block is not defined %}
+        listen {{item.https_port}};
+        server_name {{item.server_names}};
+
+        ssl on;
+{% if item.letsencrypt is defined and item.letsencrypt %}
+        ssl_certificate /etc/letsencrypt/live/{{ item.site_id }}/fullchain.pem;
+        ssl_certificate_key /etc/letsencrypt/live/{{ item.site_id }}/privkey.pem;
+{% else %}
+        ssl_certificate {{nginx_proxy_ssl_store_path}}/{{ item.site_id }}/cert.pem;
+        ssl_certificate_key {{nginx_proxy_ssl_store_path}}/{{ item.site_id }}/key.pem;
+{% endif %}
+        ssl_protocols       {{item.ssl_protocols}};
+
+        rewrite ^ {{item.https_redirect}}$request_uri? permanent;
+
+{% endif %}
+{% if item.custom_https_block is defined %}
+        {{ item.custom_https_block }}
+{% endif %}
+}
+{% endif %}

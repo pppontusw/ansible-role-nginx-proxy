@@ -1,0 +1,86 @@
+# This is quite an extensive list of variables you can set in order to create all the virtual sites, copy certificates etc.
+# You probably do not want to manage this in the defaults/main file but rather copy this into your group_vars or host_vars
+# and then comment out everything here or remove the defaults file altogether as it is really only here to show all the options
+
+# some defaults
+nginx_path: /etc/nginx
+nginx_process_name: nginx
+nginx_pkg_name: nginx
+#nginx_user: www-data
+#nginx_group: www-data
+
+dh_size: 2048
+
+# define path to store certificates
+nginx_proxy_ssl_store_path: '/ssl'
+
+# define all your SSL virtual sites here
+#nginx_proxy_ssl_virtual_sites: 
+#  - { 
+#  site_id: 'example.com', # will be the name for upstream server and the sites-available file, must be unique
+#  http_port: 80, # http port for nginx to listen to (default: 80)
+#  https_port: 443, # https port for nginx to listen to (default: 443)
+#  server_names: '*.se', # server names to listen for
+#  upstream_server: '10.10.10.10:80', # upstream server/port to connect to
+#upstream_extras: [], # extra config directives for upstream
+#  proxy_pass: 'http://10.10.10.10', # proxy pass should be the http-link to pass requests to
+#  ssl_cert: 'certificate', # certificate data
+#  ssl_key: 'key', # key data
+#  ssl_protocols: 'TLSv1 TLSv1.1 TLSv1.2', # ssl protocols we should accept for this site (default: 'TLSv1 TLSv1.1 TLSv1.2')
+#  #proxy_redirect: ''
+#  #custom_http_block: '', # here we can substitute the standard http->https redirect block with a custom server {} block if we want
+#  #custom_https_block: '', # here we can substitute the standard https proxy pass block with a custom server {} block if we want
+#  }  
+#  - { 
+#  site_id: 'proxy_ssl2.com', # will be the name for upstream server and the sites-available file, must be unique
+#  http_port: 80, # http port for nginx to listen to (default: 80)
+#  https_port: 443, # https port for nginx to listen to (default: 443)
+#  server_names: 'proxy_ssl2.com', # server names to listen for
+#  upstream_server: '10.10.10.100:80', # upstream server/port to connect to
+#upstream_extras: [], # extra config directives for upstream
+#  proxy_pass: 'http://10.10.10.100', # proxy pass should be the http-link to pass requests to
+#  ssl_cert: 'certificate', # certificate data
+#  ssl_key: 'key', # key data
+#  ssl_protocols: 'TLSv1 TLSv1.1 TLSv1.2', # ssl protocols we should accept for this site (default: 'TLSv1 TLSv1.1 TLSv1.2')
+#  #custom_http_block: '', # here we can substitute the standard http->https redirect block with a custom server {} block if we want
+#  #custom_https_block: '', # here we can substitute the standard https proxy pass block with a custom server {} block if we want
+#  #proxy_redirect: ''
+#  }
+#
+# define all your non-ssl proxy virtual sites here
+#nginx_proxy_virtual_sites: 
+#  - { 
+#  site_id: 'proxy_http', # will be the name for upstream server and the sites-available file, must be unique
+#  http_port: 80, # http port for nginx to listen to (default: 80)
+#  server_names: 'proxy_http.com', # server names to listen for
+#  upstream_server: '10.1.1.87:80', # upstream server/port to connect to
+#upstream_extras: [], # extra config directives for upstream
+#  proxy_pass: 'http://10.1.1.87', # proxy pass should be the http-link to pass requests to
+#  custom_http_block: '', # here we can substitute the standard http proxy pass block with a custom server {} block if we want
+# }
+
+# define all your http(s) 301 redirects here
+#nginx_redirect_ssl_virtual_sites: 
+#  - { 
+#  site_id: 'redirect_ssl', # will be the name for upstream server and the sites-available file, must be unique
+#  http_port: 80, # http port for nginx to listen to (default: 80)
+#  https_port: 443, # https port for nginx to listen to (default: 443)
+#  server_names: 'redirect_ssl.com', # server names to listen for
+#  http_redirect: 'https://domain.com', # URL that your http_port should redirect to
+#  https_redirect: 'https://domain.com', # URL that your https_port should redirect to
+#  ssl_cert: 'certificate', # certificate data
+#  ssl_key: 'key', # key data
+#  ssl_protocols: 'TLSv1 TLSv1.1 TLSv1.2', # ssl protocols we should accept for this site
+#  custom_http_block: '', # here we can substitute the standard http->https redirect block with a custom server {} block if we want
+#  custom_https_block: '', # here we can substitute the standard https proxy pass block with a custom server {} block if we want
+#  }  
+
+# define all your standard http-only 301 redirects here
+#nginx_redirect_virtual_sites: 
+#  - { 
+#  site_id: 'redirect', # will be the name for upstream server and the sites-available file, must be unique
+#  http_port: 80, # http port for nginx to listen to (default: 80)
+#  server_names: 'redirect.com', # server names to listen for
+#  http_redirect: 'https://domain.com', # URL that your http_port should redirect to
+#  # custom_http_block: '' # here we can substitute the standard http proxy pass block with a custom server {} block if we want
+#  }

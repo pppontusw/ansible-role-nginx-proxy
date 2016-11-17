@@ -1,0 +1,29 @@
+- name: install EPEL repo
+  yum:
+    name: "{{ epel_repo_url }}"
+    state: present
+  register: result
+  until: '"failed" not in result'
+  retries: 5
+  delay: 10
+  tags: yum
+
+- name: import EPEL key
+  rpm_key:
+    key: "{{ epel_repo_gpg_key_url }}"
+    state: present
+  tags: yum
+
+- name: install nginx
+  yum: name={{nginx_pkg_name}} state=present enablerepo=epel
+  tags: yum
+
+- include: firewalld.yml
+  tags: firewalld
+  become: yes
+
+- name: allow httpd to tcp connect
+  shell: setsebool httpd_can_network_connect 1 -P
+  become: yes
+  when: ansible_virtualization_type != 'docker'
+  tags: selinux
