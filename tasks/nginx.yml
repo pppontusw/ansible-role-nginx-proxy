@@ -117,3 +117,11 @@
   with_items: "{{nginx_redirect_virtual_sites|default([])}}"
   notify:
     - restart nginx
+
+- name: make sure the default site is not there
+  file:
+    path: "{{nginx_path}}/sites-enabled/default"
+    state: absent
+  become: yes
+  notify:
+    - restart nginx
