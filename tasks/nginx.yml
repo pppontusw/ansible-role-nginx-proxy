@@ -125,3 +125,16 @@
   become: yes
   notify:
     - restart nginx
+
+- name: configure fail2ban for nginx
+  copy:
+    dest: /etc/fail2ban/jail.d/nginx
+    content: |
+     [nginx-http-auth]
+     enabled=true
+     [nginx-botsearch]
+     enabled=true
+  become: yes
+  notify:
+    - restart fail2ban
+  when: nginx_fail2ban is defined and nginx_fail2ban

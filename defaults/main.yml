@@ -84,3 +84,5 @@ nginx_proxy_ssl_store_path: '/ssl'
 #  http_redirect: 'https://domain.com', # URL that your http_port should redirect to
 #  # custom_http_block: '' # here we can substitute the standard http proxy pass block with a custom server {} block if we want
 #  }
+
+#nginx_fail2ban: yes
