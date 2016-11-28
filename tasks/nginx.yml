@@ -117,3 +117,24 @@
   with_items: "{{nginx_redirect_virtual_sites|default([])}}"
   notify:
     - restart nginx
+
+- name: make sure the default site is not there
+  file:
+    path: "{{nginx_path}}/sites-enabled/default"
+    state: absent
+  become: yes
+  notify:
+    - restart nginx
+
+- name: configure fail2ban for nginx
+  copy:
+    dest: /etc/fail2ban/jail.d/nginx
+    content: |
+     [nginx-http-auth]
+     enabled=true
+     [nginx-botsearch]
+     enabled=true
+  become: yes
+  notify:
+    - restart fail2ban
+  when: nginx_fail2ban is defined and nginx_fail2ban
