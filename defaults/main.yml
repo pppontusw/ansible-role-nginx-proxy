@@ -86,3 +86,8 @@ nginx_proxy_ssl_store_path: '/ssl'
 #  }
 
 #nginx_fail2ban: yes
+
+#nginx_custom_vhosts:
+#  - name: test
+#    content: |
+#     nginx_full_vhost
